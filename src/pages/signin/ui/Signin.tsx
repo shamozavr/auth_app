@@ -1,4 +1,5 @@
 import { authApi } from "@/entities/user/api/auth";
+import { SigninForm } from "@/features/auth";
 import { AxiosError } from "axios";
 
 export const Signin = () => {
@@ -8,5 +9,10 @@ export const Signin = () => {
     .catch((error: AxiosError<{ error: string }>) =>
       console.log(error.response?.data.error),
     );
-  return <h1>Sign in page</h1>;
+  return (
+    <>
+      <SigninForm />
+      <span>&copy;all rights res</span>
+    </>
+  );
 };
