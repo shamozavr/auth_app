@@ -2,95 +2,68 @@ import { Button } from "@/shared/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
 import { Input } from "@/shared/ui/input";
-import React, { useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-const emailMin = 6;
-const passwordMin = 4;
-const passwordMax = 20;
-
-const FormSchema = z
-  .object({
-    email: z
-      .string()
-      .email()
-      .min(emailMin, `Email must be at least ${emailMin} characters.`),
-    password: z
-      .string()
-      .min(
-        passwordMin,
-        `Password must not be less than ${passwordMin} characters.`,
-      )
-      .max(
-        passwordMax,
-        `Password must not be more than ${passwordMax} characters.`,
-      )
-      .regex(/[A-Z]/, "Password must contain capital characters.")
-      .regex(/[a-z]/, "Password must contain small characters.")
-      .regex(/[0-9]/, "Password must contain numeric characters."),
-
-    confirmPassword: z
-      .string()
-      .min(
-        passwordMin,
-        `Password must not be less than ${passwordMin} characters.`,
-      )
-      .max(
-        passwordMax,
-        `Password must not be more than ${passwordMax} characters.`,
-      )
-      .regex(/[A-Z]/, "Password must contain capital characters.")
-      .regex(/[a-z]/, "Password must contain small characters.")
-      .regex(/[0-9]/, "Password must contain numeric characters.")
-      .optional(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+import type {
+  SigninFormSchema,
+  SignupFormSchema,
+} from "../../model/formSchema";
+import { Toaster } from "sonner";
 
 interface FormLayoutProps {
   buttonTitle: string;
-  onSubmit: (data: FormData) => void;
+  onSubmit: (
+    data: z.infer<typeof SigninFormSchema> | z.infer<typeof SignupFormSchema>,
+  ) => Promise<void>;
   confirmField?: boolean;
+  link: {
+    to: string;
+    title: string;
+  };
+  schema: typeof SigninFormSchema | typeof SignupFormSchema;
 }
-
-type FormData = z.infer<typeof FormSchema>;
 
 export const FormLayout = ({
   buttonTitle,
   onSubmit,
   confirmField,
+  link,
+  schema,
 }: FormLayoutProps) => {
-  const form = useForm<FormData>({
-    resolver: zodResolver(FormSchema),
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
     mode: "onChange",
+    defaultValues: {
+      email: "",
+      password: "",
+      ...(confirmField ? { confirmPassword: "" } : {}),
+    },
   });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     watch,
     formState: { errors },
   } = form;
-
   const isPasswordValid = !errors.password && watch("password");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
     <div>
       <Form {...form}>
+        <Toaster />
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-5">
           <FormField
             control={form.control}
@@ -193,6 +166,9 @@ export const FormLayout = ({
             {buttonTitle}
           </Button>
         </form>
+        <Button variant={"link"} className="text-[#5a7ef5] block m-auto">
+          <Link to={link.to}>{link.title}</Link>
+        </Button>
       </Form>
     </div>
   );

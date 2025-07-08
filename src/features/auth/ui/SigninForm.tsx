@@ -1,9 +1,16 @@
+import { ROUTES } from "@/shared/router/constants";
 import { FormLayout } from "./layout/FormLayout";
+import { SigninFormSchema } from "../model/formSchema";
+import { useSignin } from "../model/useSignin";
 
 export const SigninForm = () => {
-  const signIpHandler = () => {
-    console.log("signIpHandler");
-  };
-
-  return <FormLayout buttonTitle="Sign in" onSubmit={signIpHandler} />;
+  const { signinHandler } = useSignin();
+  return (
+    <FormLayout
+      buttonTitle="Sign in"
+      onSubmit={signinHandler}
+      link={{ to: ROUTES.SIGNUP, title: "Sign up" }}
+      schema={SigninFormSchema}
+    />
+  );
 };
