@@ -118,4 +118,28 @@ app.post('/signup', async (req, resp) => {
   }
 })
 
+const checkAuth = (req, resp, next) => {
+  if (!req.headers.authorization) {
+    return resp.status(401).json({ error: "Token is not found" })
+  }
+
+  const token = req.headers.authorization.split(' ')[1]
+
+  if (token === 'undefined') {
+    return resp.status(401).json({ error: "Token is not found" })
+  }
+
+  jwt.verify(token, jwt_secret, (err, user) => {
+    if (err) {
+      return resp.status(401).json({ error: "Invalid token" })
+    }
+    next();
+  })
+}
+
+app.get("/protected", checkAuth, async (req, resp) => {
+
+  console.log(2);
+})
+
 app.listen(4000, () => console.log('Server Started'))
