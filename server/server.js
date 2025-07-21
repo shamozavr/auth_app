@@ -54,14 +54,15 @@ export const SignupFormSchema = BaseFormSchema.extend({
 });
 
 
-app.get('/', (req, resp) => {
-  resp.status(200).json({
-    id: 1,
-    name: 'ALwx'
-  })
-})
+// app.get('/', (req, resp) => {
+//   resp.status(200).json({
+//     id: 1,
+//     name: 'ALwx'
+//   })
+// })
 
 app.post('/signin', async (req, resp) => {
+  // console.log('signin console')
   const result = SigninFormSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -70,20 +71,24 @@ app.post('/signin', async (req, resp) => {
 
   const { email, password } = result.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return resp.status(401).json({ error: "User not exist" });
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return resp.status(401).json({ error: "User not exist" });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password)
+
+    if (!isValidPassword) return resp.status(401).json({ error: "Password is not correct" })
+
+    const token = jwt.sign({ id: user.id }, jwt_secret, {
+      expiresIn: "1h"
+    });
+
+    return resp.status(200).json({ token, user: { id: user.id, email: user.email } });
+  } catch (err) {
+    return resp.status(500).json({ error: "Server error" });
   }
-
-  const isValidPassword = await bcrypt.compare(password, user.password)
-
-  if (!isValidPassword) return resp.status(401).json({ error: "Password is not correct" })
-
-  const token = jwt.sign({ id: user.id }, jwt_secret, {
-    expiresIn: "1h"
-  });
-
-  return resp.status(200).json({ token, user: { id: user.id, email: user.email } });
 })
 
 app.post('/signup', async (req, resp) => {
@@ -93,35 +98,43 @@ app.post('/signup', async (req, resp) => {
   }
 
   const { email, password } = result.data;
-  const isUserExists = await prisma.user.findUnique({ where: { email } });
-  if (isUserExists) {
-    return resp.status(400).json({ error: "Email is already exists" });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const newUser = await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
+  try {
+    const isUserExists = await prisma.user.findUnique({ where: { email } });
+    if (isUserExists) {
+      return resp.status(400).json({ error: "Email is already exists" });
     }
-  })
 
-  if (newUser) {
-    const token = jwt.sign({ id: newUser.id }, jwt_secret, {
-      expiresIn: "1h"
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+      }
     })
 
-    return resp.status(201).json({ token, user: { id: newUser.id, email: newUser.email } });
-  } else {
+    if (newUser) {
+      const token = jwt.sign({ id: newUser.id }, jwt_secret, {
+        expiresIn: "1h"
+      })
+
+      return resp.status(201).json({ token, user: { id: newUser.id, email: newUser.email } });
+    } else {
+      return resp.status(500).json({ error: "Server error" });
+    }
+  } catch (err) {
     return resp.status(500).json({ error: "Server error" });
   }
 })
 
 const checkAuth = (req, resp, next) => {
+  console.log('Request headers:', req.headers); // Добавьте это
+  console.log('checkAuth started');
   if (!req.headers.authorization) {
     return resp.status(401).json({ error: "Token is not found" })
   }
+
+  console.log(req.headers.authorization)
 
   const token = req.headers.authorization.split(' ')[1]
 
@@ -138,8 +151,7 @@ const checkAuth = (req, resp, next) => {
 }
 
 app.get("/protected", checkAuth, async (req, resp) => {
-
-  console.log(2);
+  return resp.status(200).json({ token, user: { id: user.id, email: user.email } });
 })
 
 app.listen(4000, () => console.log('Server Started'))

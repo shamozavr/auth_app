@@ -30,7 +30,6 @@ export const useFormLayout = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    console.log(serverValidationErrors);
     if (serverValidationErrors) {
       Object.entries(serverValidationErrors).forEach(([field, message]) => {
         form.setError(field as keyof z.infer<typeof schema>, {
