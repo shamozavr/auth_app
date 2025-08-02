@@ -128,13 +128,10 @@ app.post('/signup', async (req, resp) => {
 })
 
 const checkAuth = (req, resp, next) => {
-  console.log('Request headers:', req.headers); // Добавьте это
   console.log('checkAuth started');
   if (!req.headers.authorization) {
     return resp.status(401).json({ error: "Token is not found" })
   }
-
-  console.log(req.headers.authorization)
 
   const token = req.headers.authorization.split(' ')[1]
 
@@ -151,7 +148,7 @@ const checkAuth = (req, resp, next) => {
 }
 
 app.get("/protected", checkAuth, async (req, resp) => {
-  return resp.status(200).json({ token, user: { id: user.id, email: user.email } });
+  return resp.status(200).json({ message: "OK" });
 })
 
 app.listen(4000, () => console.log('Server Started'))
